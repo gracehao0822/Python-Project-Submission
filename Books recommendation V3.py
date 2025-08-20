@@ -93,22 +93,22 @@ class BookRecommendationSystem:
         if self.books_df is None:
             return
             
-        # 填充缺失值
+        # fullfill missing values
         self.books_df['author'].fillna('Unknown Author', inplace=True)
         self.books_df['title'].fillna('Unknown Title', inplace=True)
         self.books_df['year'] = pd.to_numeric(self.books_df['year'], errors='coerce')
         
-        # 确保所有书籍都有流行度和排名数据
+        # random generate value for popularity and ranking data
         self.books_df['popularity'] = self.books_df['popularity'].apply(
             lambda x: round(random.uniform(1, 5), 1) if pd.isna(x) else x)
         self.books_df['ranking'] = self.books_df['ranking'].apply(
             lambda x: random.randint(1, 100) if pd.isna(x) else x)
         
-        # 确保heat_index存在
+        # generate head_index
         if 'heat_index' not in self.books_df.columns:
             self.books_df['heat_index'] = random.randint(0, 100)
         
-        # 计算综合评分 - 添加防御性编程
+        # calculate composite_score with different weight of popularity, ranking and head_index
         try:
             self.books_df['composite_score'] = (
                 self.books_df['popularity'].fillna(3) * 0.6 + 
@@ -117,10 +117,10 @@ class BookRecommendationSystem:
             )
         except Exception as e:
             print(f"Error calculating composite score: {e}")
-            # 如果计算失败，使用默认值
+            # if fail to calculate,give a defualt value
             self.books_df['composite_score'] = 50.0
         
-        # 移除重复项
+        # drop duplicates for title and author
         self.books_df = self.books_df.drop_duplicates(
             subset=['title', 'author'], 
             keep='first').reset_index(drop=True)
@@ -160,9 +160,9 @@ class BookRecommendationSystem:
             return pd.DataFrame()
             
         try:
-            # 确保composite_score列存在
+            # confirm composite_score column exist
             if 'composite_score' not in self.books_df.columns:
-                self._clean_data()  # 重新清理数据以生成composite_score
+                self._clean_data()  # clean composit_score data
                 
             filtered = self.books_df.copy()
             
@@ -179,11 +179,11 @@ class BookRecommendationSystem:
             if min_heat is not None:
                 filtered = filtered[filtered['heat_index'] >= min_heat]
                 
-            # 再次确认composite_score存在
+            # double confirm composite_score column exist
             if 'composite_score' in filtered.columns:
                 filtered = filtered.sort_values('composite_score', ascending=False)
             else:
-                # 如果还是没有，按popularity排序
+                # if composite_score column not exist，order value sby popularity
                 filtered = filtered.sort_values('popularity', ascending=False)
             
             if limit is not None:
@@ -193,7 +193,7 @@ class BookRecommendationSystem:
             
         except Exception as e:
             print(f"Error filtering books: {e}")
-            return pd.DataFrame()  # 返回空DataFrame而不是引发异常
+            return pd.DataFrame()
 
     def get_random_book(self, genre: Optional[str] = None) -> Optional[Dict[str, Union[str, int]]]:
         if self.books_df is None or len(self.books_df) == 0:
